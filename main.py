@@ -8,14 +8,28 @@ class CustomError(Exception):
 
 class Person:
     def __init__(self, name: str, age: int) -> None:
-        self.name = name
-        self.age = age
+        try:
+            if not isinstance(name, str) or not name:
+                raise ValueError("Имя должно быть непустой строкой.")
+            if not isinstance(age, int) or age < 0:
+                raise ValueError("Возраст должен быть неотрицательным целым числом.")
+            self.name = name
+            self.age = age
+        except ValueError as ex:
+            print(ex)
 
 
 class Insurance:
     def __init__(self, provider: str, policy_number: str) -> None:
-        self.provider = provider
-        self.policy_number = policy_number
+        try:
+            if not isinstance(provider, str) or not provider:
+                raise ValueError("Поставщик страховки должен быть непустой строкой.")
+            if not isinstance(policy_number, str) or not policy_number:
+                raise ValueError("Номер полиса должен быть непустой строкой.")
+            self.provider = provider
+            self.policy_number = policy_number
+        except ValueError as ex:
+            print(ex)
 
     def __str__(self) -> str:
         return f"Insurance(Provider: {self.provider}, Policy_number: {self.policy_number})"
@@ -23,22 +37,39 @@ class Insurance:
 
 class MedicalRecord:
     def __init__(self, diagnosis: str, treatment: str) -> None:
-        self.diagnosis = diagnosis
-        self.treatment = treatment
+        try:
+            if not isinstance(diagnosis, str) or not diagnosis:
+                raise ValueError("Диагноз должен быть непустой строкой.")
+            if not isinstance(treatment, str) or not treatment:
+                raise ValueError("Лечение должно быть непустой строкой.")
+            self.diagnosis = diagnosis
+            self.treatment = treatment
+        except ValueError as ex:
+            print(ex)
 
 
 class Prescription:
     def __init__(self, medication: str) -> None:
-        self.medication = medication
+        try:
+            if not isinstance(medication, str) or not medication:
+                raise ValueError("Название лекарства должно быть непустой строкой.")
+            self.medication = medication
+        except ValueError as ex:
+            print(ex)
 
 
 class Patient(Person):
     def __init__(self, name: str, age: int, insurance: Insurance) -> None:
-        super().__init__(name, age)
-        self.insurance = insurance
-        self.medical_records: List[MedicalRecord] = []
-        self.prescriptions: List[Prescription] = []
-        self.treatment_plans: List['TreatmentPlan'] = []
+        try:
+            super().__init__(name, age)
+            if not isinstance(insurance, Insurance):
+                raise ValueError("Страховка должна быть объектом класса Insurance.")
+            self.insurance = insurance
+            self.medical_records: List[MedicalRecord] = []
+            self.prescriptions: List[Prescription] = []
+            self.treatment_plans: List['TreatmentPlan'] = []
+        except ValueError as ex:
+            print(ex)
 
     def __str__(self) -> str:
         return f"Patient(Name: {self.name}, Age: {self.age}, Insurance: {self.insurance.provider})"
