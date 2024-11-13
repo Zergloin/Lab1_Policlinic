@@ -1,3 +1,4 @@
+import json
 from typing import List, Union
 
 
@@ -34,6 +35,12 @@ class Insurance:
     def __str__(self) -> str:
         return f"Insurance(Provider: {self.provider}, Policy_number: {self.policy_number})"
 
+    def to_dict(self) -> dict:
+        return {
+            'provider': self.provider,
+            'policy_number': self.policy_number
+        }
+
 
 class MedicalRecord:
     def __init__(self, diagnosis: str, treatment: str) -> None:
@@ -47,6 +54,12 @@ class MedicalRecord:
         except ValueError as ex:
             print(ex)
 
+    def to_dict(self) -> dict:
+        return {
+            'diagnosis': self.diagnosis,
+            'treatment': self.treatment
+        }
+
 
 class Prescription:
     def __init__(self, medication: str) -> None:
@@ -56,6 +69,11 @@ class Prescription:
             self.medication = medication
         except ValueError as ex:
             print(ex)
+
+    def to_dict(self) -> dict:
+        return {
+            'medication': self.medication
+        }
 
 
 class Patient(Person):
@@ -102,6 +120,16 @@ class Patient(Person):
     def add_treatment_plan(self, treatment_plan: 'TreatmentPlan') -> None:
         self.treatment_plans.append(treatment_plan)
 
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'age': self.age,
+            'insurance': self.insurance.to_dict(),
+            'medical_records': [record.to_dict() for record in self.medical_records],
+            'prescriptions': [prescription.to_dict() for prescription in self.prescriptions],
+            'treatment_plans': [plan.to_dict() for plan in self.treatment_plans]
+        }
+
 
 class Doctor(Person):
     def __init__(self, name: str, age: int, specialty: str) -> None:
@@ -110,6 +138,13 @@ class Doctor(Person):
 
     def __str__(self) -> str:
         return f"Doctor(Name: {self.name}, Age: {self.age}, Specialty: {self.specialty})"
+
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'age': self.age,
+            'specialty': self.specialty
+        }
 
 
 class Staff(Person):
@@ -120,6 +155,13 @@ class Staff(Person):
     def __str__(self) -> str:
         return f"Staff(Name: {self.name}, Age: {self.age}, Position: {self.position})"
 
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'age': self.age,
+            'position': self.position
+        }
+
 
 class Bill:
     def __init__(self, patient: Patient, amount: float) -> None:
@@ -128,6 +170,12 @@ class Bill:
 
     def __str__(self) -> str:
         return f"Bill(Patient: {self.patient.name}, Amount: {self.amount})"
+
+    def to_dict(self) -> dict:
+        return {
+            'patient': self.patient.name,
+            'amount': self.amount
+        }
 
 
 class Appointment:
@@ -139,6 +187,14 @@ class Appointment:
 
     def __str__(self) -> str:
         return f"Appointment(Patient: {self.patient.name}, Doctor: {self.doctor.name}, Date: {self.date}, Time: {self.time})"
+
+    def to_dict(self) -> dict:
+        return {
+            'patient': self.patient.name,
+            'doctor': self.doctor.name,
+            'date': self.date,
+            'time': self.time
+        }
 
 
 class Department:
@@ -152,11 +208,23 @@ class Department:
     def add_doctor(self, doctor: Doctor) -> None:
         self.doctors.append(doctor)
 
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'doctors': [doctor.to_dict() for doctor in self.doctors]
+        }
+
 
 class TreatmentPlan:
     def __init__(self, diagnosis: str, treatment_steps: List[str]) -> None:
         self.diagnosis = diagnosis
         self.treatment_steps = treatment_steps
+
+    def to_dict(self) -> dict:
+        return {
+            'diagnosis': self.diagnosis,
+            'treatment_steps': self.treatment_steps
+        }
 
 
 class Clinic:
@@ -376,6 +444,17 @@ class Clinic:
                 return True
         print("Ошибка: Не найдено.")
         return False
+
+    def to_dict(self) -> dict:
+        return {
+            'patients': [patient.to_dict() for patient in self.patients],
+            'doctors': [doctor.to_dict() for doctor in self.doctors],
+            'staff': [staff_member.to_dict() for staff_member in self.staff],
+            'bills': [bill.to_dict() for bill in self.bills],
+            'appointments': [appointment.to_dict() for appointment in self.appointments],
+            'departments': [department.to_dict() for department in self.departments],
+            'insurances': [insurance.to_dict() for insurance in self.insurances]
+        }
 
 
 if __name__ == "__main__":
