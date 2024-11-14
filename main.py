@@ -674,4 +674,94 @@ class XmlDataStorage(DataStorage):
 
 
 if __name__ == "__main__":
-    pass
+    clinic = Clinic()
+
+    cardiology_department = Department(name="Cardiology")
+    neurology_department = Department(name="Neurology")
+    general_department = Department(name="General practice")
+
+    clinic.add_department(cardiology_department)
+    clinic.add_department(neurology_department)
+    clinic.add_department(general_department)
+
+    insurance1 = Insurance(provider="Amica Mutual Insurance", policy_number="HC123456")
+    insurance2 = Insurance(provider="CVS Health", policy_number="TR987654")
+
+    patient1 = Patient(name="John Martin", age=32, insurance=insurance1)
+    patient2 = Patient(name="Luis Scott", age=47, insurance=insurance2)
+
+    clinic.add_patient(patient1)
+    clinic.add_patient(patient2)
+
+    clinic.add_insurance(insurance1)
+    clinic.add_insurance(insurance2)
+
+    doctor1 = Doctor(name="Dr. Joshua Lopez", age=42, specialty="Cardiology")
+    doctor2 = Doctor(name="Dr. John Doe", age=59, specialty="Neurology")
+
+    clinic.add_doctor(doctor1)
+    clinic.add_doctor(doctor2)
+    cardiology_department.add_doctor(doctor1)
+    neurology_department.add_doctor(doctor2)
+
+    staff1 = Staff(name="Mary Wolfe", age=33, position="Nurse")
+    staff2 = Staff(name="Ralph McCoy", age=38, position="Administrator")
+
+    clinic.add_staff(staff1)
+    clinic.add_staff(staff2)
+
+    appointment1 = Appointment(patient=patient1, doctor=doctor1, date="14-11-2024", time="08:00 AM")
+    appointment2 = Appointment(patient=patient2, doctor=doctor2, date="28-12-2024", time="11:00 AM")
+
+    clinic.add_appointment(appointment1)
+    clinic.add_appointment(appointment2)
+
+    medical_record1 = MedicalRecord(diagnosis="Hypertension", treatment="Lifestyle changes")
+    medical_record2 = MedicalRecord(diagnosis="Migraine", treatment="Pain medications")
+
+    patient1.add_medical_record(medical_record1)
+    patient2.add_medical_record(medical_record2)
+
+    prescription1 = Prescription(medication="Avomit")
+    prescription2 = Prescription(medication="Granisetron")
+
+    patient1.add_prescription(prescription1)
+    patient2.add_prescription(prescription2)
+
+    treatment_plan1 = TreatmentPlan(diagnosis="Hypertension",
+                                    treatment_steps=["Blood pressure control", "Take the medication daily"])
+    treatment_plan2 = TreatmentPlan(diagnosis="Migraine",
+                                    treatment_steps=["Take medications as needed", "Avoid triggering factors"])
+
+    patient1.add_treatment_plan(treatment_plan1)
+    patient2.add_treatment_plan(treatment_plan2)
+
+    clinic.create_bill(patient1.name, amount=950.0)
+    clinic.create_bill(patient2.name, amount=350.0)
+
+    json_storage = JsonDataStorage()
+    json_storage.save(clinic, 'clinic_data.json')
+
+    xml_storage = XmlDataStorage()
+    xml_storage.save(clinic, 'clinic_data.xml')
+
+    loaded_clinic_json = json_storage.load('clinic_data.json')
+    print("Загружено из JSON:")
+    print(loaded_clinic_json.get_patients())
+
+    loaded_clinic_xml = xml_storage.load('clinic_data.xml')
+    print("\nЗагружено из XML:")
+    print(loaded_clinic_xml.get_patients())
+
+    print("\nИнформация о персонале:")
+    print(loaded_clinic_json.get_staffs())
+
+    print("\nИнформация о департаментах:")
+    print(loaded_clinic_json.get_departments())
+
+    print("\nИнформация о конкретном пациенте:")
+    loaded_clinic_json.get_patient("Ivan Ivanov")
+
+    print("\nОбновление информации о счете:")
+    loaded_clinic_json.update_bill("Luis Scott", 884)
+    print(loaded_clinic_json.get_bill("Luis Scott"))
