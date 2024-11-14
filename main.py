@@ -457,5 +457,63 @@ class Clinic:
         }
 
 
+class DataStorage:
+    def save(self, clinic: Clinic, filename: str) -> None:
+        raise NotImplementedError
+
+    def load(self, filename: str) -> Clinic:
+        raise NotImplementedError
+
+
+class JsonDataStorage(DataStorage):
+    def save(self, clinic: Clinic, filename: str) -> None:
+        data = clinic.to_dict()
+        try:
+            with open(filename, 'w') as file:
+                json.dump(data, file, indent=4)
+        except Exception as ex:
+            print(f"Ошибка при сохранении данных в JSON: {ex}")
+
+    def load(self, filename: str) -> Clinic:
+        clinic = Clinic()
+        try:
+            with open(filename, 'r') as file:
+                data = json.load(file)
+            for patient in data['patients']:
+                insurance = Insurance(patient['insurance']['provider'], patient['insurance']['policy_number'])
+                new_patient = Patient(patient['name'], patient['age'], insurance)
+                for record in patient['medical_records']:
+                    new_patient.add_medical_record(MedicalRecord(record['diagnosis'], record['treatment']))
+                for prescription in patient['prescriptions']:
+                    new_patient.add_prescription(Prescription(prescription['medication']))
+                for treatment_plan in patient['treatment_plans']:
+                    new_patient.add_treatment_plan(
+                        TreatmentPlan(treatment_plan['diagnosis'], treatment_plan['treatment_steps']))
+                clinic.add_patient(new_patient)
+
+            for doctor in data['doctors']:
+                clinic.add_doctor(Doctor(doctor['name'], doctor['age'], doctor['specialty']))
+            for staff in data['staff']:
+                clinic.add_staff(Staff(staff['name'], staff['age'], staff['position']))
+            for bill in data['bills']:
+                clinic.create_bill(bill['patient'], bill['amount'])
+            for appointment in data['appointments']:
+                patient = next((p for p in clinic.patients if p.name == appointment['patient']), None)
+                doctor = next((d for d in clinic.doctors if d.name == appointment['doctor']), None)
+                if patient and doctor:
+                    clinic.add_appointment(Appointment(patient, doctor, appointment['date'], appointment['time']))
+            for department in data['departments']:
+                dept = Department(department['name'])
+                for doctor in department['doctors']:
+                    dept.add_doctor(Doctor(doctor['name'], doctor['age'], doctor['specialty']))
+                clinic.add_department(dept)
+            for insurance in data.get('insurances', []):
+                clinic.add_insurance(Insurance(insurance['provider'], insurance['policy_number']))
+
+        except (FileNotFoundError, json.JSONDecodeError) as ex:
+            print(f"Ошибка при загрузке данных из JSON: {ex}")
+        return clinic
+
+
 if __name__ == "__main__":
     pass
