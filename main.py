@@ -530,5 +530,141 @@ class JsonDataStorage(DataStorage):
         return clinic
 
 
+class XmlDataStorage(DataStorage):
+    def save(self, clinic: Clinic, filename: str) -> None:
+        root = ET.Element("Clinic")
+        self._add_patients(root, clinic)
+        self._add_doctors(root, clinic)
+        self._add_staff(root, clinic)
+        self._add_bills(root, clinic)
+        self._add_appointments(root, clinic)
+        self._add_departments(root, clinic)
+        self._add_insurances(root, clinic)
+        try:
+            tree = ET.ElementTree(root)
+            tree.write(filename)
+        except Exception as ex:
+            print(f"Ошибка при сохранении данных в XML: {ex}")
+
+    def _add_patients(self, root: ET.Element, clinic: Clinic) -> None:
+        patients = ET.SubElement(root, "Patients")
+        for patient in clinic.patients:
+            p = ET.SubElement(patients, "Patient")
+            p.set("name", patient.name)
+            p.set("age", str(patient.age))
+            insurance = ET.SubElement(p, "Insurance")
+            insurance.set("provider", patient.insurance.provider)
+            insurance.set("policy_number", patient.insurance.policy_number)
+
+            records = ET.SubElement(p, "MedicalRecords")
+            for record in patient.medical_records:
+                rec = ET.SubElement(records, "Record")
+                rec.set("diagnosis", record.diagnosis)
+                rec.set("treatment", record.treatment)
+
+            prescriptions = ET.SubElement(p, "Prescriptions")
+            for prescription in patient.prescriptions:
+                pres = ET.SubElement(prescriptions, "Prescription")
+                pres.set("medication", prescription.medication)
+
+            treatment_plans = ET.SubElement(p, "TreatmentPlans")
+            for plan in patient.treatment_plans:
+                tp = ET.SubElement(treatment_plans, "TreatmentPlan")
+                tp.set("diagnosis", plan.diagnosis)
+                tp.set("steps", ', '.join(plan.treatment_steps))
+
+    def _add_doctors(self, root: ET.Element, clinic: Clinic) -> None:
+        doctors = ET.SubElement(root, "Doctors")
+        for doctor in clinic.doctors:
+            d = ET.SubElement(doctors, "Doctor")
+            d.set("name", doctor.name)
+            d.set("age", str(doctor.age))
+            d.set("specialty", doctor.specialty)
+
+    def _add_staff(self, root: ET.Element, clinic: Clinic) -> None:
+        staff = ET.SubElement(root, "Staff")
+        for staff_member in clinic.staff:
+            s = ET.SubElement(staff, "StaffMember")
+            s.set("name", staff_member.name)
+            s.set("age", str(staff_member.age))
+            s.set("position", staff_member.position)
+
+    def _add_bills(self, root: ET.Element, clinic: Clinic) -> None:
+        bills = ET.SubElement(root, "Bills")
+        for bill in clinic.bills:
+            b = ET.SubElement(bills, "Bill")
+            b.set("patient", bill.patient.name)
+            b.set("amount", str(bill.amount))
+
+    def _add_appointments(self, root: ET.Element, clinic: Clinic) -> None:
+        appointments = ET.SubElement(root, "Appointments")
+        for appointment in clinic.appointments:
+            a = ET.SubElement(appointments, "Appointment")
+            a.set("patient", appointment.patient.name)
+            a.set("doctor", appointment.doctor.name)
+            a.set("date", appointment.date)
+            a.set("time", appointment.time)
+
+    def _add_departments(self, root: ET.Element, clinic: Clinic) -> None:
+        departments = ET.SubElement(root, "Departments")
+        for department in clinic.departments:
+            d = ET.SubElement(departments, "Department")
+            d.set("name", department.name)
+            for doctor in department.doctors:
+                doc = ET.SubElement(d, "Doctor")
+                doc.set("name", doctor.name)
+                doc.set("age", str(doctor.age))
+                doc.set("specialty", doctor.specialty)
+
+    def _add_insurances(self, root: ET.Element, clinic: Clinic) -> None:
+        insurances = ET.SubElement(root, "Insurances")
+        for insurance in clinic.insurances:
+            ins = ET.SubElement(insurances, "Insurance")
+            ins.set("provider", insurance.provider)
+            ins.set("policy_number", insurance.policy_number)
+
+    def load(self, filename: str) -> Clinic:
+        clinic = Clinic()
+        try:
+            tree = ET.parse(filename)
+            root = tree.getroot()
+            for p in root.find("Patients"):
+                insurance = Insurance(p.find("Insurance").get("provider"), p.find("Insurance").get("policy_number"))
+                patient = Patient(p.get("name"), int(p.get("age")), insurance)
+
+                for rec in p.find("MedicalRecords"):
+                    patient.add_medical_record(MedicalRecord(rec.get("diagnosis"), rec.get("treatment")))
+                for pres in p.find("Prescriptions"):
+                    patient.add_prescription(Prescription(pres.get("medication")))
+                for tp in p.find("TreatmentPlans"):
+                    steps = tp.get("steps").split(', ')
+                    patient.add_treatment_plan(TreatmentPlan(tp.get("diagnosis"), steps))
+
+                clinic.add_patient(patient)
+
+            for d in root.find("Doctors"):
+                clinic.add_doctor(Doctor(d.get("name"), int(d.get("age")), d.get("specialty")))
+            for s in root.find("Staff"):
+                clinic.add_staff(Staff(s.get("name"), int(s.get("age")), s.get("position")))
+            for b in root.find("Bills"):
+                clinic.create_bill(b.get("patient"), float(b.get("amount")))
+            for a in root.find("Appointments"):
+                patient = next((p for p in clinic.patients if p.name == a.get("patient")), None)
+                doctor = next((d for d in clinic.doctors if d.name == a.get("doctor")), None)
+                if patient and doctor:
+                    clinic.add_appointment(Appointment(patient, doctor, a.get("date"), a.get("time")))
+            for d in root.find("Departments"):
+                department = Department(d.get("name"))
+                for doc in d.findall("Doctor"):
+                    department.add_doctor(Doctor(doc.get("name"), int(doc.get("age")), doc.get("specialty")))
+                clinic.add_department(department)
+            for ins in root.find("Insurances"):
+                clinic.add_insurance(Insurance(ins.get("provider"), ins.get("policy_number")))
+
+        except (ET.ParseError, FileNotFoundError) as ex:
+            print(f"Ошибка при загрузке данных из XML: {ex}")
+        return clinic
+
+
 if __name__ == "__main__":
     pass
