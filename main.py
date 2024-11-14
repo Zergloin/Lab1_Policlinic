@@ -467,10 +467,9 @@ class DataStorage:
 
 class JsonDataStorage(DataStorage):
     def save(self, clinic: Clinic, filename: str) -> None:
-        data = clinic.to_dict()
         try:
             with open(filename, 'w') as file:
-                json.dump(data, file, indent=4)
+                json.dump(clinic.to_dict(), file, indent=4)
         except Exception as ex:
             print(f"Ошибка при сохранении данных в JSON: {ex}")
 
@@ -479,36 +478,30 @@ class JsonDataStorage(DataStorage):
         try:
             with open(filename, 'r') as file:
                 data = json.load(file)
-            for patient in data['patients']:
-                insurance = Insurance(patient['insurance']['provider'], patient['insurance']['policy_number'])
-                new_patient = Patient(patient['name'], patient['age'], insurance)
-                for record in patient['medical_records']:
-                    new_patient.add_medical_record(MedicalRecord(record['diagnosis'], record['treatment']))
-                for prescription in patient['prescriptions']:
-                    new_patient.add_prescription(Prescription(prescription['medication']))
-                for treatment_plan in patient['treatment_plans']:
-                    new_patient.add_treatment_plan(
-                        TreatmentPlan(treatment_plan['diagnosis'], treatment_plan['treatment_steps']))
+
+            for patient_data in data['patients']:
+                insurance = Insurance(**patient_data['insurance'])
+                new_patient = Patient(patient_data['name'], patient_data['age'], insurance)
+                new_patient.medical_records = [MedicalRecord(**record) for record in patient_data['medical_records']]
+                new_patient.prescriptions = [Prescription(p['medication']) for p in patient_data['prescriptions']]
+                new_patient.treatment_plans = [TreatmentPlan(**t) for t in patient_data['treatment_plans']]
                 clinic.add_patient(new_patient)
 
-            for doctor in data['doctors']:
-                clinic.add_doctor(Doctor(doctor['name'], doctor['age'], doctor['specialty']))
-            for staff in data['staff']:
-                clinic.add_staff(Staff(staff['name'], staff['age'], staff['position']))
-            for bill in data['bills']:
-                clinic.create_bill(bill['patient'], bill['amount'])
-            for appointment in data['appointments']:
-                patient = next((p for p in clinic.patients if p.name == appointment['patient']), None)
-                doctor = next((d for d in clinic.doctors if d.name == appointment['doctor']), None)
-                if patient and doctor:
-                    clinic.add_appointment(Appointment(patient, doctor, appointment['date'], appointment['time']))
-            for department in data['departments']:
-                dept = Department(department['name'])
-                for doctor in department['doctors']:
-                    dept.add_doctor(Doctor(doctor['name'], doctor['age'], doctor['specialty']))
+            clinic.doctors = [Doctor(**doctor) for doctor in data['doctors']]
+            clinic.staff = [Staff(**staff) for staff in data['staff']]
+            clinic.bills = [clinic.create_bill(b['patient'], b['amount']) for b in data['bills']]
+            clinic.appointments = [
+                Appointment(
+                    next((p for p in clinic.patients if p.name == a['patient']), None),
+                    next((d for d in clinic.doctors if d.name == a['doctor']), None),
+                    a['date'], a['time']
+                ) for a in data['appointments']
+            ]
+            for department_data in data['departments']:
+                dept = Department(department_data['name'])
+                dept.doctors = [Doctor(**doc) for doc in department_data['doctors']]
                 clinic.add_department(dept)
-            for insurance in data.get('insurances', []):
-                clinic.add_insurance(Insurance(insurance['provider'], insurance['policy_number']))
+            clinic.insurances = [Insurance(**insurance) for insurance in data.get('insurances', [])]
 
         except (FileNotFoundError, json.JSONDecodeError) as ex:
             print(f"Ошибка при загрузке данных из JSON: {ex}")
