@@ -1,4 +1,5 @@
 import json
+import xml.etree.ElementTree as ET
 from typing import List, Union
 
 
@@ -236,6 +237,27 @@ class Clinic:
         self.departments: List[Department] = []
         self.bills: List[Bill] = []
         self.insurances: List[Insurance] = []
+
+    def get_patients(self) -> List[dict]:
+        return [patient.to_dict() for patient in self.patients]
+
+    def get_doctors(self) -> List[dict]:
+        return [doctor.to_dict() for doctor in self.doctors]
+
+    def get_staffs(self) -> List[dict]:
+        return [staff_member.to_dict() for staff_member in self.staff]
+
+    def get_appointments(self) -> List[dict]:
+        return [appointment.to_dict() for appointment in self.appointments]
+
+    def get_departments(self) -> List[dict]:
+        return [department.to_dict() for department in self.departments]
+
+    def get_bills(self) -> List[dict]:
+        return [bill.to_dict() for bill in self.bills]
+
+    def get_insurances(self) -> List[dict]:
+        return [insurance.to_dict() for insurance in self.insurances]
 
     def add_patient(self, patient: Patient) -> None:
         self.patients.append(patient)
